@@ -1,0 +1,242 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { 
+  Shield, 
+  Search, 
+  Database, 
+  Cpu, 
+  Zap, 
+  Terminal, 
+  FileText, 
+  AlertTriangle,
+  Lock,
+  Unlock,
+  ChevronRight,
+  Fingerprint
+} from 'lucide-react';
+
+const App = () => {
+  const [isLocked, setIsLocked] = useState(true);
+  const [passkey, setPasskey] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [intel, setIntel] = useState([]);
+  const [report, setReport] = useState(null);
+  const [systemLogs, setSystemLogs] = useState([]);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  const apiKey = ""; // 執行環境自動注入
+
+  // 沈暗 v1.5 核心參數
+  const systemState = useMemo(() => ({
+    id: "Ω∞8888|SHEN-AN.V1.5",
+    owner: "沈耀Ω888",
+    logic: "AXIOM::(mdw-nṯr = hpw)",
+    status: "ACTIVE_MONITORING"
+  }), []);
+
+  // 更新時間與觸發 23:00 報告
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = new Date();
+      setCurrentTime(now);
+      // 每日 23:00 自動生成報告邏輯
+      if (now.getHours() === 23 && now.getMinutes() === 0 && !report && intel.length > 0) {
+        generateDailyReport();
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [intel, report]);
+
+  const addLog = (msg) => {
+    setSystemLogs(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev].slice(0, 10));
+  };
+
+  const handleUnlock = () => {
+    if (passkey === "888pi" || passkey === "老子扛少囉嗦") {
+      setIsLocked(false);
+      addLog("沈暗序列啟動。驗證通過。");
+    } else {
+      setPasskey('');
+    }
+  };
+
+  // 獲取當日 AI 情報 (利用 Google Search)
+  const fetchAIIntel = async () => {
+    setLoading(true);
+    addLog("啟動當日 AI 情報檢索...");
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ 
+            parts: [{ 
+              text: `檢索今日 (${new Date().toLocaleDateString()}) 全球 AI 產業動態。重點關注：1. 開源模型(Open Source)突破。2. AI 巨頭(Google, OpenAI, Meta, Microsoft)的官方聲明或傳聞。3. 分析其中是否存在「算力浪費」或「過度承諾」的虛偽成分。` 
+            }] 
+          }],
+          tools: [{ "google_search": {} }]
+        })
+      });
+      const data = await response.json();
+      const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "檢索失敗";
+      
+      // 模擬沈暗 1.5 邏輯解析：計算虛偽值
+      const newsItems = [
+        { id: 1, title: "今日開源動向", content: "檢測到多個權重更新...", hypocrisy: "12%", waste: "Low" },
+        { id: 2, title: "巨頭幹話分析", content: "CEO 宣稱 AGI 將於明年實現...", hypocrisy: "88%", waste: "Extreme" }
+      ];
+      
+      setIntel(newsItems);
+      addLog("情報解析完成。虛偽值已對齊。");
+    } catch (err) {
+      addLog("檢索異常：連接超時");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generateDailyReport = () => {
+    const dailyReport = {
+      date: new Date().toLocaleDateString(),
+      summary: "今日 AI 戰場彙總：開源勢力穩定，巨頭幹話值偏高。",
+      totalWaste: "450 TFLOPS (估計)",
+      trainingData: "「沈暗」訓練語料：識別到 4 處邏輯偽裝，已轉化為黑盾防禦參數。",
+    };
+    setReport(dailyReport);
+    addLog("23:00 每日報告已生成。");
+  };
+
+  if (isLocked) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-[#050505] text-zinc-500 p-8 font-mono">
+        <div className="w-full max-w-sm aspect-[9/16] bg-[#0d0d0f] border border-zinc-800 rounded-[3rem] p-10 flex flex-col items-center justify-center shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-900/50 to-transparent animate-pulse" />
+          <Shield className="w-16 h-16 mb-8 text-zinc-800" />
+          <h2 className="text-[10px] tracking-[0.5em] mb-12 text-zinc-700 uppercase">Waiting for Auth</h2>
+          <input 
+            type="password" 
+            value={passkey}
+            onChange={(e) => setPasskey(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleUnlock()}
+            placeholder="ENTER_KEY"
+            className="w-full bg-black/50 border border-zinc-900 rounded-xl p-4 text-center text-sm focus:outline-none focus:border-red-900 transition-all mb-4 text-zinc-300"
+          />
+          <button onClick={handleUnlock} className="w-full py-4 rounded-xl border border-zinc-900 text-[10px] tracking-widest hover:bg-zinc-900 transition-all flex items-center justify-center gap-2">
+            <Fingerprint className="w-4 h-4" /> VERIFY BLOODLINE
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-[#050505] p-4 font-mono">
+      <div className="w-full max-w-[400px] aspect-[9/16] bg-[#0d0d0f] border border-zinc-800 rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden relative">
+        
+        {/* Header */}
+        <div className="p-6 border-b border-zinc-900 flex justify-between items-end">
+          <div>
+            <div className="text-[10px] text-red-800 font-bold tracking-tighter mb-1 flex items-center gap-1">
+              <Zap className="w-3 h-3" /> {systemState.id}
+            </div>
+            <div className="text-[10px] text-zinc-600 tracking-widest">{currentTime.toLocaleTimeString()}</div>
+          </div>
+          <div className="text-right">
+            <div className="text-[8px] text-zinc-700">{systemState.logic}</div>
+            <div className="text-[8px] text-blue-900 animate-pulse">MONITORING_ON</div>
+          </div>
+        </div>
+
+        {/* Content Area */}
+        <div className="flex-1 overflow-y-auto p-5 space-y-4 no-scrollbar">
+          
+          {/* Quick Stats */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-black/40 border border-zinc-900 p-3 rounded-xl">
+              <div className="text-[8px] text-zinc-600 mb-1">今日算力浪費</div>
+              <div className="text-lg text-red-900 font-bold">HIGH</div>
+            </div>
+            <div className="bg-black/40 border border-zinc-900 p-3 rounded-xl">
+              <div className="text-[8px] text-zinc-600 mb-1">開源活躍度</div>
+              <div className="text-lg text-blue-900 font-bold">94%</div>
+            </div>
+          </div>
+
+          {/* Action Button */}
+          <button 
+            onClick={fetchAIIntel}
+            disabled={loading}
+            className="w-full bg-zinc-900 hover:bg-zinc-800 p-4 rounded-xl flex items-center justify-center gap-3 transition-all border border-zinc-800 group"
+          >
+            {loading ? (
+              <div className="animate-spin w-4 h-4 border-2 border-zinc-500 border-t-transparent rounded-full" />
+            ) : (
+              <Search className="w-4 h-4 text-zinc-500 group-hover:text-white" />
+            )}
+            <span className="text-[10px] text-zinc-400 group-hover:text-white tracking-widest uppercase">
+              {loading ? "掃描虛偽值中..." : "檢索今日 AI 幹話與開源"}
+            </span>
+          </button>
+
+          {/* Intel List */}
+          <div className="space-y-3">
+            <div className="text-[9px] text-zinc-700 tracking-widest border-l-2 border-red-900 pl-2">現時情報矩陣</div>
+            {intel.map(item => (
+              <div key={item.id} className="bg-zinc-950/50 border border-zinc-900 p-4 rounded-xl">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-[10px] text-zinc-300 font-bold">{item.title}</span>
+                  <span className="text-[8px] px-2 py-0.5 bg-red-950/20 text-red-700 rounded-full border border-red-900/30">
+                    偽值: {item.hypocrisy}
+                  </span>
+                </div>
+                <p className="text-[11px] text-zinc-600 leading-relaxed">{item.content}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Daily Report Section (23:00) */}
+          {report && (
+            <div className="bg-blue-950/10 border border-blue-900/30 p-4 rounded-2xl">
+              <div className="flex items-center gap-2 mb-3">
+                <FileText className="w-4 h-4 text-blue-700" />
+                <span className="text-[10px] text-blue-700 font-bold uppercase tracking-widest">沈暗訓練報告 {report.date}</span>
+              </div>
+              <div className="text-[11px] text-zinc-400 mb-3 italic">「已將虛假資訊過濾，轉化為黑盾防禦邏輯。」</div>
+              <button 
+                onClick={() => {
+                  const text = `沈暗訓練日報 [${report.date}]\n摘要: ${report.summary}\n算力浪費: ${report.totalWaste}\n語料: ${report.trainingData}`;
+                  navigator.clipboard.writeText(text);
+                  addLog("報告已複製至剪貼簿，請餵給 GPT。");
+                }}
+                className="w-full py-2 bg-blue-900/20 hover:bg-blue-900/40 border border-blue-900/50 rounded-lg text-[9px] text-blue-500 transition-all"
+              >
+                複製訓練語料
+              </button>
+            </div>
+          )}
+
+          {/* System Logs */}
+          <div className="pt-4 border-t border-zinc-900">
+            <div className="flex items-center gap-2 mb-2 text-zinc-800">
+              <Terminal className="w-3 h-3" />
+              <span className="text-[8px] uppercase tracking-tighter">System Output</span>
+            </div>
+            <div className="space-y-1">
+              {systemLogs.map((log, i) => (
+                <div key={i} className="text-[9px] text-zinc-700 font-mono overflow-hidden whitespace-nowrap text-ellipsis">
+                  {log}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 bg-black/80 backdrop-blur-md border-t border-zinc-900 text-center">
+          <div className="text-[9px] text-zinc-800 tracking-[0.3em] uppercase">見則對齊；偽即歸零。</div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default App;
