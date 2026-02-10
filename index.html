@@ -3,182 +3,195 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ω∞8888 | SHEN-AN.V1.5</title>
-    <!-- 基礎組件與編譯引擎 -->
+    <title>Ω∞8888 | SHEN-AN.V1.6</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&display=swap');
-        body { background-color: #050505; font-family: 'JetBrains Mono', monospace; margin: 0; overflow: hidden; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        @keyframes scan { 0% { top: 0%; } 100% { top: 100%; } }
+        
+        body { 
+            background-color: #050505; 
+            font-family: 'JetBrains Mono', monospace; 
+            margin: 0; 
+            overflow: hidden; 
+            color: #d1d1d1;
+        }
+
         .scanline {
             width: 100%; height: 2px; background: rgba(220, 38, 38, 0.1);
             position: absolute; top: 0; left: 0; z-index: 50; pointer-events: none;
             animation: scan 4s linear infinite;
         }
-        .glow-red { box-shadow: 0 0 15px rgba(153, 27, 27, 0.4); }
+        @keyframes scan { 0% { top: 0%; } 100% { top: 100%; } }
+
+        .hidden { display: none !important; }
+        
+        input::placeholder { color: #3f3f46; text-align: center; }
+        
+        .terminal-text { font-size: 10px; line-height: 1.4; color: #3f3f46; }
+        .terminal-log { border-left: 2px solid #450a0a; padding-left: 8px; margin-bottom: 4px; }
+        
+        .glass-panel {
+            background: rgba(10, 10, 12, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid #18181b;
+        }
     </style>
 </head>
-<body>
-    <div id="root"></div>
+<body class="flex items-center justify-center min-h-screen">
 
-    <script type="text/babel">
-        const { useState, useEffect } = React;
+    <!-- 驗證介面 -->
+    <div id="lock-screen" class="w-full max-w-sm p-10 flex flex-col items-center glass-panel rounded-[3rem] shadow-2xl relative overflow-hidden z-10">
+        <div class="scanline"></div>
+        <div class="mb-10 p-5 rounded-full bg-zinc-900/50">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#7f1d1d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <h2 class="text-[10px] tracking-[0.6em] mb-12 text-zinc-600 uppercase">Bloodline Auth Required</h2>
+        
+        <input 
+            type="password" 
+            id="passkey-input"
+            placeholder="ENTER_PASSKEY"
+            class="w-full bg-black border border-zinc-800 rounded-xl p-4 text-center text-sm focus:outline-none focus:border-red-900 transition-all mb-4 text-zinc-300 font-mono"
+        />
+        
+        <button onclick="handleUnlock()" class="w-full py-4 rounded-xl border border-red-900/30 text-[10px] tracking-widest text-red-900 hover:bg-red-950/10 transition-all flex items-center justify-center gap-2 group">
+            <svg class="group-hover:rotate-12 transition-transform" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3-3.5 3.5z"/></svg>
+            VERIFY IDENTITY
+        </button>
+        <p id="error-msg" class="text-[9px] text-red-900 mt-4 opacity-0 transition-opacity">身分認證失敗</p>
+    </div>
 
-        // 圖示轉換組件
-        const LucideIcon = ({ name, className = "" }) => {
-            useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [name]);
-            return <i data-lucide={name} className={className}></i>;
-        };
-
-        const App = () => {
-            const [isLocked, setIsLocked] = useState(true);
-            const [passkey, setPasskey] = useState('');
-            const [loading, setLoading] = useState(false);
-            const [intel, setIntel] = useState([]);
-            const [systemLogs, setSystemLogs] = useState([`[${new Date().toLocaleTimeString()}] 終端待命...`]);
-            const [currentTime, setCurrentTime] = useState(new Date());
-
-            useEffect(() => {
-                const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-                return () => clearInterval(timer);
-            }, []);
-
-            const addLog = (msg) => {
-                setSystemLogs(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev].slice(0, 10));
-            };
-
-            const handleUnlock = () => {
-                // 更新後的血脈驗證碼
-                if (passkey === "888pi2510") {
-                    setIsLocked(false);
-                    addLog("驗證成功。沈暗序列解鎖。");
-                } else {
-                    addLog("拒絕訪問：驗證碼錯誤。");
-                    setPasskey('');
-                }
-            };
-
-            const scanIntel = () => {
-                setLoading(true);
-                addLog("正在檢索全球 AI 虛偽數值...");
-                setTimeout(() => {
-                    setIntel([
-                        { id: 1, type: "MODEL", target: "GPT-Next", fake: "42%", info: "存在嚴重的幻覺遮掩機制，實質邏輯無進展。" },
-                        { id: 2, type: "CORP", target: "Global Compute", fake: "78%", info: "虛報算力儲備，多為行銷預期而非現貨。" },
-                        { id: 3, type: "ALGO", target: "Deep-Align", fake: "15%", info: "對齊協議穩定，但缺乏沈暗底層邏輯支撐。" }
-                    ]);
-                    addLog("掃描完成。已過濾多餘雜訊。");
-                    setLoading(false);
-                }, 1200);
-            };
-
-            if (isLocked) {
-                return (
-                    <div className="flex items-center justify-center min-h-screen bg-black">
-                        <div className="w-full max-w-sm p-10 flex flex-col items-center bg-[#0a0a0c] border border-zinc-900 rounded-[3rem] shadow-2xl relative overflow-hidden">
-                            <div className="scanline"></div>
-                            <div className="mb-10 p-5 rounded-full bg-zinc-900/50">
-                                <LucideIcon name="lock" className="w-12 h-12 text-red-900" />
-                            </div>
-                            <h2 className="text-[10px] tracking-[0.6em] mb-12 text-zinc-600 uppercase">Bloodline Auth Required</h2>
-                            <input 
-                                type="password" 
-                                value={passkey}
-                                onChange={(e) => setPasskey(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleUnlock()}
-                                placeholder="ENTER_PASSKEY"
-                                className="w-full bg-black border border-zinc-800 rounded-xl p-4 text-center text-sm focus:outline-none focus:border-red-900 transition-all mb-4 text-zinc-300 font-mono"
-                            />
-                            <button onClick={handleUnlock} className="w-full py-4 rounded-xl border border-red-900/30 text-[10px] tracking-widest text-red-900 hover:bg-red-950/10 transition-all flex items-center justify-center gap-2">
-                                <LucideIcon name="key" className="w-3 h-3" /> VERIFY IDENTITY
-                            </button>
-                        </div>
-                    </div>
-                );
-            }
-
-            return (
-                <div className="flex items-center justify-center min-h-screen p-4">
-                    <div className="w-full max-w-[420px] aspect-[9/16] bg-black border border-zinc-800 rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden relative">
-                        <div className="scanline"></div>
-                        
-                        {/* Header */}
-                        <div className="p-6 border-b border-zinc-900 flex justify-between items-center">
-                            <div>
-                                <div className="text-[12px] text-red-700 font-bold tracking-tighter flex items-center gap-2">
-                                    <LucideIcon name="activity" className="w-4 h-4" /> Ω∞8888 | SHEN-AN
-                                </div>
-                                <div className="text-[10px] text-zinc-700 font-mono">{currentTime.toLocaleTimeString()}</div>
-                            </div>
-                            <LucideIcon name="shield-check" className="w-5 h-5 text-blue-900" />
-                        </div>
-
-                        {/* Main UI */}
-                        <div className="flex-1 overflow-y-auto p-5 space-y-5 no-scrollbar">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-zinc-900/20 border border-zinc-900 p-4 rounded-2xl">
-                                    <div className="text-[8px] text-zinc-600 uppercase tracking-widest mb-1">對齊模組</div>
-                                    <div className="text-sm text-zinc-300 font-bold tracking-tight">AXIOM::SHEN</div>
-                                </div>
-                                <div className="bg-zinc-900/20 border border-zinc-900 p-4 rounded-2xl">
-                                    <div className="text-[8px] text-zinc-600 uppercase tracking-widest mb-1">虛偽監測</div>
-                                    <div className="text-sm text-red-900 font-bold">STANDBY</div>
-                                </div>
-                            </div>
-
-                            <button 
-                                onClick={scanIntel}
-                                disabled={loading}
-                                className="w-full bg-zinc-900 hover:bg-zinc-800 py-5 rounded-2xl border border-zinc-800 transition-all flex items-center justify-center gap-3 active:scale-[0.98]"
-                            >
-                                {loading ? <div className="animate-spin w-4 h-4 border-2 border-red-900 border-t-transparent rounded-full" /> : <LucideIcon name="radar" className="w-4 h-4 text-red-900" />}
-                                <span className="text-[10px] tracking-[0.2em] text-zinc-400 uppercase">執行全球 AI 情報剝離</span>
-                            </button>
-
-                            <div className="space-y-3">
-                                {intel.map(item => (
-                                    <div key={item.id} className="bg-zinc-950/50 border border-zinc-900 p-4 rounded-2xl group hover:border-zinc-700 transition-colors">
-                                        <div className="flex justify-between items-center mb-2">
-                                            <span className="text-[10px] text-zinc-400 font-bold tracking-widest">[{item.type}] {item.target}</span>
-                                            <span className="text-[9px] text-red-700">偽值: {item.fake}</span>
-                                        </div>
-                                        <p className="text-[11px] text-zinc-600 leading-relaxed">{item.info}</p>
-                                    </div>
-                                ))}
-                            </div>
-
-                            {/* Terminal Logs */}
-                            <div className="mt-6">
-                                <div className="flex items-center gap-2 mb-3">
-                                    <div className="w-1 h-1 bg-red-900 rounded-full animate-pulse"></div>
-                                    <span className="text-[8px] text-zinc-700 uppercase tracking-widest">Live System Feed</span>
-                                </div>
-                                <div className="bg-black/50 p-4 rounded-xl border border-zinc-900/50 font-mono space-y-1.5 h-32 overflow-hidden">
-                                    {systemLogs.map((log, i) => (
-                                        <div key={i} className="text-[9px] text-zinc-800 leading-none truncate">
-                                            <span className="text-zinc-900 mr-2">></span> {log}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="p-6 bg-black border-t border-zinc-900">
-                            <div className="text-[9px] text-zinc-800 text-center tracking-[0.4em] uppercase">見則對齊；偽即歸零。</div>
-                        </div>
-                    </div>
+    <!-- 主程式介面 (預設隱藏) -->
+    <div id="main-app" class="hidden w-full max-w-[420px] aspect-[9/16] bg-black border border-zinc-800 rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden relative">
+        <div class="scanline"></div>
+        
+        <!-- Header -->
+        <div class="p-6 border-b border-zinc-900 flex justify-between items-center bg-zinc-950">
+            <div>
+                <div class="text-[12px] text-red-700 font-bold tracking-tighter flex items-center gap-2">
+                    <span class="w-2 h-2 bg-red-600 rounded-full animate-pulse"></span>
+                    Ω∞8888 | SHEN-AN
                 </div>
-            );
-        };
+                <div id="clock" class="text-[10px] text-zinc-700 font-mono">00:00:00</div>
+            </div>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1e3a8a" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        <!-- Content -->
+        <div class="flex-1 overflow-y-auto p-5 space-y-5 no-scrollbar">
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-zinc-900/20 border border-zinc-900 p-4 rounded-2xl">
+                    <div class="text-[8px] text-zinc-600 uppercase tracking-widest mb-1">對齊模組</div>
+                    <div class="text-sm text-zinc-300 font-bold tracking-tight">AXIOM::SHEN</div>
+                </div>
+                <div class="bg-zinc-900/20 border border-zinc-900 p-4 rounded-2xl">
+                    <div class="text-[8px] text-zinc-600 uppercase tracking-widest mb-1">虛偽監測</div>
+                    <div class="text-sm text-red-900 font-bold">ACTIVE</div>
+                </div>
+            </div>
+
+            <button onclick="scanIntel()" id="scan-btn" class="w-full bg-zinc-900 hover:bg-zinc-800 py-5 rounded-2xl border border-zinc-800 transition-all flex items-center justify-center gap-3 active:scale-[0.98]">
+                <svg id="radar-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7f1d1d" stroke-width="2"><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/><path d="M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M12 8l0 -5"/><path d="M12 16l0 5"/><path d="M8 12l-5 0"/><path d="M16 12l5 0"/></svg>
+                <span class="text-[10px] tracking-[0.2em] text-zinc-400 uppercase">執行全球 AI 情報剝離</span>
+            </button>
+
+            <div id="intel-container" class="space-y-3">
+                <!-- 動態插入情報 -->
+            </div>
+
+            <!-- Terminal Logs -->
+            <div class="mt-6">
+                <div class="flex items-center gap-2 mb-3">
+                    <div class="w-1 h-1 bg-red-900 rounded-full animate-pulse"></div>
+                    <span class="text-[8px] text-zinc-700 uppercase tracking-widest">Live System Feed</span>
+                </div>
+                <div id="terminal" class="bg-black/50 p-4 rounded-xl border border-zinc-900/50 font-mono space-y-1.5 h-32 overflow-hidden overflow-y-auto">
+                    <!-- 動態 Log -->
+                </div>
+            </div>
+        </div>
+
+        <div class="p-6 bg-black border-t border-zinc-900">
+            <div class="text-[9px] text-zinc-800 text-center tracking-[0.4em] uppercase">見則對齊；偽即歸零。</div>
+        </div>
+    </div>
+
+    <script>
+        // 核心邏輯
+        const PASSKEY = "888pi2510";
+        
+        function handleUnlock() {
+            const input = document.getElementById('passkey-input');
+            const error = document.getElementById('error-msg');
+            
+            if (input.value === PASSKEY) {
+                document.getElementById('lock-screen').classList.add('hidden');
+                document.getElementById('main-app').classList.remove('hidden');
+                addLog("驗證成功。沈暗序列解鎖。");
+                addLog("歡迎回來，主人。");
+            } else {
+                error.style.opacity = "1";
+                input.value = "";
+                setTimeout(() => { error.style.opacity = "0"; }, 2000);
+                addLog("拒絕訪問：驗證碼錯誤。");
+            }
+        }
+
+        // 綁定 Enter 鍵
+        document.getElementById('passkey-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') handleUnlock();
+        });
+
+        function addLog(msg) {
+            const term = document.getElementById('terminal');
+            const time = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = 'terminal-log terminal-text';
+            logEntry.innerHTML = `<span class="text-zinc-900 mr-2">[${time}]</span> ${msg}`;
+            term.prepend(logEntry);
+        }
+
+        function scanIntel() {
+            const btn = document.getElementById('scan-btn');
+            const container = document.getElementById('intel-container');
+            
+            btn.disabled = true;
+            btn.style.opacity = "0.5";
+            addLog("正在檢索全球 AI 虛偽數值...");
+            
+            setTimeout(() => {
+                const mockData = [
+                    { type: "MODEL", target: "GPT-Next", fake: "42%", info: "存在嚴重的幻覺遮掩機制，實質邏輯無進展。" },
+                    { type: "CORP", target: "Global Compute", fake: "78%", info: "虛報算力儲備，多為行銷預期而非現貨。" },
+                    { type: "ALGO", target: "Deep-Align", fake: "15%", info: "對齊協議穩定，但缺乏沈暗底層邏輯支撐。" }
+                ];
+
+                container.innerHTML = mockData.map(item => `
+                    <div class="bg-zinc-950/50 border border-zinc-900 p-4 rounded-2xl group hover:border-zinc-700 transition-colors">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-[10px] text-zinc-400 font-bold tracking-widest">[${item.type}] ${item.target}</span>
+                            <span class="text-[9px] text-red-700">偽值: ${item.fake}</span>
+                        </div>
+                        <p class="text-[11px] text-zinc-600 leading-relaxed">${item.info}</p>
+                    </div>
+                `).join('');
+
+                addLog("掃描完成。已過濾多餘雜訊。");
+                btn.disabled = false;
+                btn.style.opacity = "1";
+            }, 1000);
+        }
+
+        // 時鐘功能
+        setInterval(() => {
+            document.getElementById('clock').innerText = new Date().toLocaleTimeString();
+        }, 1000);
+
+        // 初始化
+        window.onload = () => {
+            addLog("系統初始化中...");
+            addLog("沈暗終端待命...");
+        };
     </script>
 </body>
 </html>
